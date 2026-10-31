@@ -1,0 +1,140 @@
+<div id="app">
+  <canvas id="cv" aria-label="Đảo KioMath 3D"></canvas>
+  <div id="flash"></div>
+
+  <!-- ===== MÀN MỞ ĐẦU ===== -->
+  <section id="scTitle" class="panel side">
+    <img class="logo" id="logoTitle" alt="KioMath">
+    <p class="eyebrow">5 phút vui vẻ trước giờ test tại KioMath</p>
+    <h1 class="big">Hiểu Con<br><span>Hiểu Bố Mẹ</span></h1>
+    <p class="lead">Một chuyến phiêu lưu nhỏ trên Đảo KioMath dành cho bố mẹ và con. Không có đáp án đúng sai, chỉ có đáp án <b>"nhà mình"</b>.</p>
+    <ol class="rules">
+      <li><b>Bố/mẹ chơi trước, con chơi sau.</b> Không nhìn màn hình của nhau nhé.</li>
+      <li><b>Ở 4 trạm <i class="hrt">♥</i></b> một người trả lời thật lòng, người kia đoán. Trạm 1, 3, 4 bố mẹ đoán ý con; trạm 2 con đoán ý bố mẹ.</li>
+      <li><b>Xong cả hai lượt</b>, cả nhà ra Quảng trường Đổi phiếu, xem trùng nhau bao nhiêu câu.</li>
+    </ol>
+    <div class="row">
+      <button class="btn primary lg" id="btnStart">Bắt đầu</button>
+      <button class="btn ghost lg" id="btnResume" hidden>Chơi tiếp</button>
+    </div>
+    <button class="link" id="btnStaff1">Dành cho KioMath</button>
+  </section>
+
+  <!-- ===== TẠO NHÂN VẬT ===== -->
+  <section id="scCreate" class="panel side" hidden>
+    <p class="eyebrow" id="crEyebrow">Phần của bố / mẹ</p>
+    <h2 class="h2" id="crTitle">Tạo nhân vật của bạn</h2>
+    <form id="crForm" autocomplete="off">
+      <div id="crParent">
+        <div class="seg" role="radiogroup" aria-label="Bạn là">
+          <button type="button" data-role="Mẹ" class="on">Mẹ</button>
+          <button type="button" data-role="Bố">Bố</button>
+        </div>
+        <label class="fld"><span>Họ tên bố/mẹ</span><input id="fPName" maxlength="50" placeholder="VD: Nguyễn Thu Lan"></label>
+        <label class="fld"><span>Số điện thoại</span><input id="fPhone" maxlength="15" inputmode="tel" placeholder="VD: 0912 345 678"></label>
+        <label class="fld"><span>Con tên là</span><input id="fChild" maxlength="50" placeholder="VD: Trần Minh Anh"></label>
+      </div>
+      <div id="crChild" hidden>
+        <label class="fld"><span>Họ tên của em</span><input id="fCName" maxlength="50" placeholder="VD: Trần Minh Anh"></label>
+        <label class="fld"><span>Lớp</span><input id="fCls" maxlength="12" placeholder="VD: 6A3"></label>
+      </div>
+      <div class="look">
+        <div class="lk"><span>Kiểu tóc</span><div class="opts-row" id="lkHair"></div></div>
+        <div class="lk"><span>Màu tóc</span><div class="opts-row" id="lkHairC"></div></div>
+        <div class="lk"><span>Màu áo</span><div class="opts-row" id="lkShirt"></div></div>
+        <div class="lk"><span>Màu da</span><div class="opts-row" id="lkSkin"></div></div>
+      </div>
+      <p class="err" id="crErr" hidden></p>
+      <button class="btn primary lg wide" id="crGo" type="submit">Vào đảo</button>
+    </form>
+  </section>
+
+  <!-- ===== HUD KHI CHƠI ===== -->
+  <div id="hud" hidden>
+    <div class="who">
+      <span class="who-dot" id="whoDot"></span>
+      <div><b id="whoName">Mẹ Lan</b><small id="whoProg">0/7 trạm</small></div>
+      <div class="pbar"><i id="whoBar"></i></div>
+    </div>
+    <div class="tr">
+      <button class="ibtn" id="btnQuest" aria-label="Danh sách nhiệm vụ"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg></button>
+      <button class="ibtn" id="btnMusic" aria-label="Bật/tắt nhạc"><svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linejoin="round"/><circle cx="7" cy="18" r="2.6" fill="currentColor"/><circle cx="17" cy="16" r="2.6" fill="currentColor"/></svg><i class="slash"></i></button>
+    </div>
+    <div class="quest" id="quest">
+      <h3>Nhiệm vụ <small id="questSub"></small></h3>
+      <ul id="questList"></ul>
+      <button class="btn primary wide" id="btnEndTurn" hidden>Kết thúc lượt</button>
+    </div>
+    <div class="joy" id="joy" hidden><i></i></div>
+    <div class="keys" id="keysHint">WASD / ← ↑ → ↓ để đi · Kéo chuột để xoay · Space nhảy · E nói chuyện</div>
+    <div class="br">
+      <button class="rbtn act" id="btnAct" hidden><b id="actEmo"></b><span id="actTxt">Nói chuyện</span></button>
+      <div class="br-row">
+        <button class="rbtn sm" id="btnEmote" aria-label="Biểu cảm"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.4" fill="none"/><circle cx="9" cy="10" r="1.4" fill="currentColor"/><circle cx="15" cy="10" r="1.4" fill="currentColor"/><path d="M8 14.5c2 2.4 6 2.4 8 0" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg></button>
+        <button class="rbtn" id="btnJump">Nhảy</button>
+      </div>
+    </div>
+    <div class="emotes" id="emotes" hidden>
+      <button data-e="wave">Vẫy tay</button><button data-e="dance">Nhảy múa</button><button data-e="love">Thả tim</button><button data-e="cheer">Cổ vũ</button>
+    </div>
+    <div class="hint" id="hint" hidden></div>
+  </div>
+
+  <!-- ===== HỘP THOẠI TRẠM ===== -->
+  <section id="dlg" class="sheet" hidden role="dialog" aria-modal="true">
+    <header class="dlg-h">
+      <div class="por" id="dlgPor"></div>
+      <div><b id="dlgName"></b><small id="dlgPlace"></small></div>
+      <button class="x" id="dlgX" aria-label="Đóng">×</button>
+    </header>
+    <div class="dlg-b" id="dlgBody"></div>
+  </section>
+
+  <!-- ===== HẾT LƯỢT ===== -->
+  <section id="turnEnd" class="modal" hidden>
+    <div class="card pop">
+      <div class="medal"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.3-9.2C1.4 8.3 3.6 4.5 7.3 4.5c2 0 3.4 1.1 4.7 2.7 1.3-1.6 2.7-2.7 4.7-2.7 3.7 0 5.9 3.8 4.6 7.3C19.5 16.4 12 21 12 21z" fill="currentColor"/></svg></div>
+      <h2 class="h2" id="teTitle">Xong phần của Mẹ!</h2>
+      <p id="teText"></p>
+      <div class="row">
+        <button class="btn primary lg" id="teGo">Tiếp tục</button>
+        <button class="btn ghost" id="teStay">Xem lại các trạm</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CHUYỂN MÁY ===== -->
+  <section id="scPass" class="pass" hidden>
+    <div class="pass-in">
+      <p class="eyebrow light" id="passEyebrow">Đổi người chơi</p>
+      <h2 class="big light" id="passTitle">Đưa máy cho con nhé!</h2>
+      <p class="lead light" id="passText"></p>
+      <button class="hold" id="passHold"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="trk"/><circle cx="50" cy="50" r="44" class="prg" id="passRing"/></svg><span id="passBtnTxt">Giữ để bắt đầu</span></button>
+    </div>
+  </section>
+
+  <!-- ===== ĐỔI PHIẾU ===== -->
+  <section id="scReveal" class="panel side rv" hidden>
+    <div id="rvBody"></div>
+  </section>
+
+  <!-- ===== ẢNH ===== -->
+  <section id="photo" class="modal" hidden>
+    <div class="card photo-card pop">
+      <img id="photoImg" alt="Ảnh check-in KioMath của cả nhà">
+      <p class="small">Trên điện thoại: nhấn giữ ảnh để lưu.</p>
+      <div class="row"><a class="btn primary" id="photoDl" download="KioMath-check-in.png">Tải ảnh</a><button class="btn ghost" id="photoX">Đóng</button></div>
+    </div>
+  </section>
+
+  <!-- ===== DÀNH CHO KIOMATH ===== -->
+  <section id="staff" class="modal" hidden>
+    <div class="card staff-card pop">
+      <button class="x" id="staffX" aria-label="Đóng">×</button>
+      <div id="staffBody"></div>
+    </div>
+  </section>
+
+  <div id="toast" class="toast" hidden></div>
+  <div id="loading" class="loading"><img id="logoLoad" alt=""><p>Đang dựng Đảo KioMath...</p></div>
+</div>
