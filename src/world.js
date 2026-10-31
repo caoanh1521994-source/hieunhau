@@ -201,7 +201,7 @@ function buildStation(st) {
   const mk = sprite(D.markTex, 1.25, 160 / 170); mk.position.set(st.x, D.top + 1.2, st.z); SC.add(mk); D.marker = mk;
   const ring = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.25, 40), new THREE.MeshBasicMaterial({ color: new THREE.Color(st.col), transparent: true, opacity: 0.7 }));
   ring.rotation.x = -Math.PI / 2; ring.position.set(D.ip.x, 0.04, D.ip.z); SC.add(ring); D.ring = ring;
-  ANIM.push(t => { mk.position.y = D.top + 1.2 + Math.sin(t * 2.4 + st.x) * 0.18; ring.scale.setScalar(1 + Math.sin(t * 3) * 0.08); if (D.npc) D.npc.tick(t); });
+  ANIM.push(t => { mk.position.y = D.top + 1.2 + Math.sin(t * 2.4 + st.x) * 0.18; const todo = mk.material.map !== ICON.check, pz = todo ? 1 + Math.max(0, Math.sin(t * 5)) * 0.22 : 1; mk.scale.set(1.25 * 160 / 170 * pz, 1.25 * pz, 1); mk.material.opacity = todo ? 0.75 + Math.abs(Math.sin(t * 5)) * 0.25 : 1; ring.material.opacity = 0.35 + Math.abs(Math.sin(t * 3)) * 0.55; ring.scale.setScalar(1 + Math.sin(t * 3) * 0.08); if (D.npc) D.npc.tick(t); });
   ST3[st.id] = D;
 }
 

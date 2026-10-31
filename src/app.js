@@ -32,7 +32,7 @@ const F = s => esc(fill(s));
 const pTag = () => (S.role + ' ' + last(S.p.name)).trim();
 const HEART = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.3-9.2C1.4 8.3 3.6 4.5 7.3 4.5c2 0 3.4 1.1 4.7 2.7 1.3-1.6 2.7-2.7 4.7-2.7 3.7 0 5.9 3.8 4.6 7.3C19.5 16.4 12 21 12 21z" fill="currentColor"/></svg>';
 
-let MODE = 'title', T = 0, HP = null, HC = null, camYaw = 0, camDist = 10.5, ARROW = null, STAFF_OK = false, BUSY = false;
+let NEXT = null, MODE = 'title', T = 0, HP = null, HC = null, camYaw = 0, camDist = 10.5, ARROW = null, STAFF_OK = false, BUSY = false;
 const keys = {}; let jx = 0, jy = 0, drag = null, nearSt = null, hintKey = '';
 const lookAtV = new V3(0, 0, 0);
 
@@ -168,13 +168,23 @@ function renderQuest() {
   $('questList').innerHTML = list.map(st => {
     const d = isDone(w, st.id), q = st.id[0] === 'q';
     const bg = d ? 'var(--mint)' : q ? 'var(--rose)' : st.col;
-    return `<li class="${d ? 'done' : ''}"><span class="qi" style="background:${bg}">${d ? '✓' : q ? HQ[st.id].n : '!'}</span><span class="qn">${esc(st.name)}<small>${d ? 'Đã xong · ' : ''}${esc(stationSub(st, w))}</small></span><button data-go="${st.id}">Đi tới</button></li>`;
+    return `<li class="${d ? 'done' : 'todo'}${st.id === NEXT ? ' next' : ''}" data-id="${st.id}"><span class="qi" style="background:${bg}">${d ? '✓' : q ? HQ[st.id].n : '!'}</span><span class="qn">${esc(st.name)}<small>${d ? 'Đã xong · ' : ''}${esc(stationSub(st, w))}</small></span><button data-go="${st.id}">Đi tới</button></li>`;
   }).join('');
   $('questSub').textContent = n + '/' + list.length;
   $('whoProg').textContent = n + '/' + list.length + ' trạm';
   $('whoBar').style.width = (n / list.length * 100) + '%';
   $('btnEndTurn').hidden = n < list.length;
+  $('questBadge').textContent = list.length - n || '';
+  questGlow();
   $('btnEndTurn').textContent = w === 'p' ? 'Xong, đưa máy cho con' : 'Xong, cùng Đổi phiếu';
+}
+function questGlow() {
+  const w = turn(), left = w ? mine(w).some(st => !isDone(w, st.id)) : false;
+  $('btnQuest').classList.toggle('glow', left && $('quest').classList.contains('closed'));
+}
+function setNext(id) {
+  if (id === NEXT) return; NEXT = id;
+  document.querySelectorAll('#questList li').forEach(li => li.classList.toggle('next', li.dataset.id === id && li.classList.contains('todo')));
 }
 function goTo(id) {
   const D = ST3[id], st = D.st, d = Math.hypot(D.ip.x, D.ip.z) || 1;
@@ -185,6 +195,7 @@ function goTo(id) {
   CAM.position.set(x + Math.sin(camYaw) * 9, 6, z + Math.cos(camYaw) * 9);
   burst(PLAYER.root.position.clone().add(new V3(0, 1, 0)), 'spark', 12, 3); SND.play('whoosh');
   if (innerWidth < 760) $('quest').classList.add('closed');
+  questGlow();
 }
 
 // ---------- hộp thoại trạm ----------
@@ -613,7 +624,7 @@ function bindUI() {
   $('scCreate').addEventListener('click', e => { const b = e.target.closest('.opts-row button'); if (!b) return; const k = b.dataset.k, v = k === 'hair' ? b.dataset.v : +b.dataset.v; S[CW].look[k] = v; renderLook(); const h = rebuild(CW); emote(h, 'cheer', 0.8); h.vy = 5; SND.play('pop'); save(); });
   let nt = null; const nameLive = () => { clearTimeout(nt); nt = setTimeout(() => { if (CW === 'p') { S.p.name = $('fPName').value; S.p.child = $('fChild').value; setNameTag(HP, pTag()); } else { S.c.name = $('fCName').value; setNameTag(HC, cC()); $('crTitle').textContent = 'Chào ' + cC() + '! Tạo nhân vật của em'; } }, 250); };
   ['fPName', 'fChild', 'fCName'].forEach(id => $(id).addEventListener('input', nameLive));
-  $('btnQuest').onclick = () => { $('quest').classList.toggle('closed'); SND.play('tap'); };
+  $('btnQuest').onclick = () => { $('quest').classList.toggle('closed'); questGlow(); SND.play('tap'); };
   const mb = $('btnMusic'); mb.classList.toggle('off', !SND.musicOn); mb.onclick = () => { SND.init(); SND.setMusic(!SND.musicOn); mb.classList.toggle('off', !SND.musicOn); };
   $('questList').addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) goTo(b.dataset.go); });
   $('btnEndTurn').onclick = showTurnEnd;
@@ -703,8 +714,9 @@ function updatePlay(dt) {
     if (hk === 'hp') { hi.textContent = fill('{P} đang chờ {C} ở đây. Nhớ đừng cho {p} xem câu trả lời nhé!'); emote(HP, 'wave', 1.5); }
   }
   // mũi tên dẫn đường
-  let tgt = null, td = 1e9;
-  if (w) for (const st of mine(w)) { if (isDone(w, st.id)) continue; const D = ST3[st.id], d = Math.hypot(D.ip.x - pos.x, D.ip.z - pos.z); if (d < td) { td = d; tgt = D.ip; } }
+  let tgt = null, td = 1e9, tid = null;
+  if (w) for (const st of mine(w)) { if (isDone(w, st.id)) continue; const D = ST3[st.id], d = Math.hypot(D.ip.x - pos.x, D.ip.z - pos.z); if (d < td) { td = d; tgt = D.ip; tid = st.id; } }
+  setNext(tid);
   ARROW.visible = !!tgt && td > 4.5 && !block;
   if (ARROW.visible) { const a = Math.atan2(tgt.x - pos.x, tgt.z - pos.z); ARROW.rotation.y = a; ARROW.position.set(pos.x + Math.sin(a) * 1.6, groundY(pos.x, pos.z) + 0.06, pos.z + Math.cos(a) * 1.6); ARROW.children[0].material.opacity = 0.6 + Math.sin(T * 5) * 0.3; }
 }
